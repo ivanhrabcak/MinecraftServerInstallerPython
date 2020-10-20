@@ -1,10 +1,10 @@
 import subprocess
-import os, jdk
-import urllib
+import os, jdk, json
+import urllib, requests
 from urllib.request import urlretrieve
 
 
-class ToolKit:
+class Utils:
     def __init__(self):
         if not os.path.exists("BuildTools.jar"):
             self.__get_build_tools()
@@ -52,3 +52,20 @@ class ToolKit:
     def deleting_error(self):
         print("There was an error when deleting your files.")
         return
+
+
+
+class ServerTools:
+    def __init__(self):
+        self.current_dir = os.getcwd()
+
+    def get_mc_version(self):
+        self.raw_json_data = requests.get(
+            "https://launchermeta.mojang.com/mc/game/version_manifest.json").content.decode()
+        self.json_loaded_data = json.loads(self.raw_json_data)
+        print(self.json_loaded_data.get("latest").get("release"))
+
+    def install_server(self):
+        print("Do you want to install in current directory? (y/n)")
+        print(f"{self.current_dir} - Is your current directory")
+        self.install_in = input("? ")
