@@ -2,6 +2,8 @@ import subprocess
 import os, jdk, json
 import urllib, requests
 from urllib.request import urlretrieve
+import math
+from psutil import virtual_memory
 
 
 class Utils:
@@ -15,7 +17,7 @@ class Utils:
             print("Java is not installed, installing...")
             self.__installjava(8)
 
-
+    @staticmethod
     def __check_java_installation(self):
         print("Checking if java is installed")
         try:
@@ -39,6 +41,7 @@ class Utils:
         except Exception as e:
             print(f"Error while downloading build tools: {e}")
 
+    @staticmethod
     def __installjava(self, ver):
         try:
             print(f"Installing Java Runtime Environment {ver}")
@@ -53,19 +56,78 @@ class Utils:
         print("There was an error when deleting your files.")
         return
 
+    def edit_eula(self):
+        if not os.path.exists("eula.txt"):
+            return
+        f = open("eula.txt", "r")
+        data = f.read()
+        f.close()
+        data = data.replace("false", "true")
+        f = open("eula.txt", "w+")
+        f.write(data)
+        f.close()
 
 
-class ServerTools:
+
+class ServerUtils:
     def __init__(self):
         self.current_dir = os.getcwd()
+        self.utils = Utils()
 
     def get_mc_version(self):
         self.raw_json_data = requests.get(
-            "https://launchermeta.mojang.com/mc/game/version_manifest.json").content.decode()
+            "https://launchermeta.mojang.com/mc/game/version_manifest.json").content.decode()       #LOL this stooopid fast
         self.json_loaded_data = json.loads(self.raw_json_data)
-        print(self.json_loaded_data.get("latest").get("release"))
+        self.newest_mc_version = self.json_loaded_data.get("latest").get("release")
 
     def install_server(self):
         print("Do you want to install in current directory? (y/n)")
         print(f"{self.current_dir} - Is your current directory")
         self.install_in = input("? ")
+        print("Do you want to install newest version of Minecraft? (y/n)")
+        install_newest_mc_version = input("? ")
+
+
+        if self.install_in.lower() == "y" and install_newest_mc_version.lower() == "y":
+            print("Installing...")
+            os.system(f"java -jar BuildTools.jar --rev {self.newest_mc_version}")
+            print("Installing stopped...")
+
+        elif self.install_in.lower() == "y" and install_newest_mc_version.lower() == "n":
+            version = input("Version? \n ? ")
+            global final_mc_version
+            final_mc_version = version
+            print(f"Installing Minecraft version {self.newest_mc_version}...")
+            os.system(f"java -jar BuildTools.jar --rev {version}")
+            print("Installing stopped...")
+
+        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "y":
+            user_dir = input("Your Directory: ")
+            os.chdir(user_dir)
+            print(f"Sucesfully changed to {os.getcwd()}")
+            print(f"Installing Minecraft version {self.newest_mc_version}...")
+            os.system(f"java -jar BuildTools.jar --rev {self.newest_mc_version}")
+
+        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "n":
+            user_dir = input("Your Directory: ")
+            os.chdir(user_dir)
+            print(f"Sucesfully changed to {os.getcwd()}")
+            version = input("Version? \n ? ")
+            global final_mc_version
+            final_mc_version = version
+            print(f"Installing Minecraft version {version}...")
+            os.system(f"java -jar BuildTools.jar --rev {version}")
+
+    def run_server(self, ver):
+
+        self.utils.edit_eula()
+
+        print("Run server?  (y/n)")
+        run = input("? ")
+
+        if run == "y":
+            memory = math.floor(virtual_memory().total * pow(10, -9))
+            os.system('java -Xmx%dG -Xms%dG -jar spigot-%s.jar -nogui' % (memory, memory, ver))
+
+        else:
+            print("Wrong input, going back to menu...")
