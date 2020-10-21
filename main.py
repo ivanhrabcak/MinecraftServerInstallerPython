@@ -88,37 +88,37 @@ class ServerUtils:
         install_newest_mc_version = input("? ")
 
 
-        if self.install_in.lower() == "y" and install_newest_mc_version.lower() == "y":
-            print("Installing...")
+        if self.install_in.lower() == "y" and install_newest_mc_version.lower() == "y":         #FIXME
+            print("Installing...")                                                              #Should add getting of the version into menu()
             os.system(f"java -jar BuildTools.jar --rev {self.newest_mc_version}")
             print("Installing stopped...")
+            return self.newest_mc_version
 
-        elif self.install_in.lower() == "y" and install_newest_mc_version.lower() == "n":
-            version = input("Version? \n ? ")
-            global final_mc_version
-            final_mc_version = version
-            print(f"Installing Minecraft version {self.newest_mc_version}...")
-            os.system(f"java -jar BuildTools.jar --rev {version}")
+        elif self.install_in.lower() == "y" and install_newest_mc_version.lower() == "n":       #FIXME
+            self.version = input("Version? \n ? ")
+            print(f"Installing Minecraft version {self.version}...")
+            os.system(f"java -jar BuildTools.jar --rev {self.version}")
             print("Installing stopped...")
+            return self.version
 
-        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "y":
+        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "y":      #FIXME
             user_dir = input("Your Directory: ")
             os.chdir(user_dir)
             print(f"Sucesfully changed to {os.getcwd()}")
             print(f"Installing Minecraft version {self.newest_mc_version}...")
             os.system(f"java -jar BuildTools.jar --rev {self.newest_mc_version}")
+            return self.newest_mc_version
 
-        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "n":
+        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "n":      #FIXME
             user_dir = input("Your Directory: ")
             os.chdir(user_dir)
             print(f"Sucesfully changed to {os.getcwd()}")
             version = input("Version? \n ? ")
-            global final_mc_version
-            final_mc_version = version
             print(f"Installing Minecraft version {version}...")
             os.system(f"java -jar BuildTools.jar --rev {version}")
+            return self.version
 
-    def run_server(self, ver):
+    def run_server(self, version):
 
         self.utils.edit_eula()
 
@@ -127,7 +127,25 @@ class ServerUtils:
 
         if run == "y":
             memory = math.floor(virtual_memory().total * pow(10, -9))
-            os.system('java -Xmx%dG -Xms%dG -jar spigot-%s.jar -nogui' % (memory, memory, ver))
+            os.system('java -Xmx%dG -Xms%dG -jar spigot-%s.jar -nogui' % (memory, memory, version))
 
         else:
             print("Wrong input, going back to menu...")
+
+
+def Menu():
+    srv_util = ServerUtils()
+    print(" What do you want to do?")
+    print("\n")
+    print("[0] -- Install server")
+    print("[1] -- Run Server")
+    print("[2] -- Update Server")
+    print("[3] -- DELETE SERVER")
+
+    choice = input("? ")
+
+    if choice == "0":
+        global installed_version
+        installed_version = srv_util.install_server()
+    elif choice == "1":
+        srv_util.run_server(installed_version)      #FIXME
