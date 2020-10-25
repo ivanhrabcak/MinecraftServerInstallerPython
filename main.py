@@ -1,6 +1,6 @@
 import subprocess
 import os, jdk, json
-import urllib, requests
+import shutil, requests
 from urllib.request import urlretrieve
 import math
 from psutil import virtual_memory
@@ -68,15 +68,15 @@ class Utils:
         f.close()
 
 
-
 class ServerUtils:
     def __init__(self):
         self.current_dir = os.getcwd()
         self.utils = Utils()
+        self.installed_minecraf_version = None
 
     def get_mc_version(self):
         self.raw_json_data = requests.get(
-            "https://launchermeta.mojang.com/mc/game/version_manifest.json").content.decode()       #LOL this stooopid fast
+            "https://launchermeta.mojang.com/mc/game/version_manifest.json").content.decode()  # LOL this stooopid fast
         self.json_loaded_data = json.loads(self.raw_json_data)
         self.newest_mc_version = self.json_loaded_data.get("latest").get("release")
 
@@ -87,39 +87,38 @@ class ServerUtils:
         print("Do you want to install newest version of Minecraft? (y/n)")
         install_newest_mc_version = input("? ")
 
-
-        if self.install_in.lower() == "y" and install_newest_mc_version.lower() == "y":         #FIXME
-            print("Installing...")                                                              #Should add getting of the version into menu()
+        if self.install_in.lower() == "y" and install_newest_mc_version.lower() == "y":
+            print("Installing...")
             os.system(f"java -jar BuildTools.jar --rev {self.newest_mc_version}")
             print("Installing stopped...")
-            return self.newest_mc_version
+            self.installed_minecraf_version = self.newest_mc_version
 
-        elif self.install_in.lower() == "y" and install_newest_mc_version.lower() == "n":       #FIXME
-            self.version = input("Version? \n ? ")
-            print(f"Installing Minecraft version {self.version}...")
-            os.system(f"java -jar BuildTools.jar --rev {self.version}")
+        elif self.install_in.lower() == "y" and install_newest_mc_version.lower() == "n":
+            version = input("Version? \n ? ")
+            print(f"Installing Minecraft version {version}...")
+            os.system(f"java -jar BuildTools.jar --rev {version}")
             print("Installing stopped...")
-            return self.version
+            self.installed_minecraf_version = self.version
 
-        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "y":      #FIXME
+        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "y":
             user_dir = input("Your Directory: ")
             os.chdir(user_dir)
             print(f"Sucesfully changed to {os.getcwd()}")
             print(f"Installing Minecraft version {self.newest_mc_version}...")
             os.system(f"java -jar BuildTools.jar --rev {self.newest_mc_version}")
-            return self.newest_mc_version
+            self.installed_minecraf_version = self.newest_mc_version
 
-        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "n":      #FIXME
+        elif self.install_in.lower() == "n" and install_newest_mc_version.lower() == "n":
             user_dir = input("Your Directory: ")
             os.chdir(user_dir)
             print(f"Sucesfully changed to {os.getcwd()}")
             version = input("Version? \n ? ")
             print(f"Installing Minecraft version {version}...")
             os.system(f"java -jar BuildTools.jar --rev {version}")
-            return self.version
+            self.installed_minecraf_version = version
 
-    def run_server(self, version):
-
+    def run_server(self):
+        installed_version = self.installed_minecraf_version
         self.utils.edit_eula()
 
         print("Run server?  (y/n)")
@@ -127,10 +126,25 @@ class ServerUtils:
 
         if run == "y":
             memory = math.floor(virtual_memory().total * pow(10, -9))
-            os.system('java -Xmx%dG -Xms%dG -jar spigot-%s.jar -nogui' % (memory, memory, version))
+            os.system('java -Xmx%dG -Xms%dG -jar spigot-%s.jar -nogui' % (memory, memory, installed_version))
 
         else:
             print("Wrong input, going back to menu...")
+
+    def delete_all(self):
+        print(f"You're about uninstall everything in {os.getcwd()}, are you sure you want to continue? \n")
+        choice = input()
+        if choice.lower() == "y":
+            shutil.rmtree(os.getcwd(), ignore_errors=False, onerror=print("Something went wrong while deleting files"))
+        elif choice.lower() == "n":
+            print("Returning to menu")
+            Menu()
+
+    def update(self):
+        print("Updating...")
+        os.system(f"java -jar BuildTools.jar --rev {self.installed_minecraf_version}")
+        print("Updated")
+        Menu()
 
 
 def Menu():
@@ -145,7 +159,13 @@ def Menu():
     choice = input("? ")
 
     if choice == "0":
-        global installed_version
-        installed_version = srv_util.install_server()
+        srv_util.install_server()
     elif choice == "1":
-        srv_util.run_server(installed_version)      #FIXME
+        srv_util.run_server()
+    elif choice == "2":
+        srv_util.update()
+    elif choice == "3":
+        srv_util.delete_all()
+    else:
+        print("Wrong input...")
+        Menu()
